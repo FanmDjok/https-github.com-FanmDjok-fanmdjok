@@ -23,6 +23,9 @@ export type Database = {
           plan: "gratuit" | "essentiel" | "business";
           logo_url: string | null;
           brand_color: string | null;
+          trial_ends_at: string | null;
+          stripe_customer_id: string | null;
+          referral_code: string | null;
           created_by: string;
           created_at: string;
         };
@@ -33,11 +36,81 @@ export type Database = {
           plan?: "gratuit" | "essentiel" | "business";
           logo_url?: string | null;
           brand_color?: string | null;
+          trial_ends_at?: string | null;
+          stripe_customer_id?: string | null;
+          referral_code?: string | null;
           created_by: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["organizations"]["Insert"]>;
         Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          organization_id: string;
+          stripe_subscription_id: string | null;
+          stripe_price_id: string | null;
+          status: "aucun" | "essai" | "actif" | "impayé" | "annulé" | "en_pause";
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          paused_until: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          stripe_subscription_id?: string | null;
+          stripe_price_id?: string | null;
+          status?: "aucun" | "essai" | "actif" | "impayé" | "annulé" | "en_pause";
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          paused_until?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      referral_redemptions: {
+        Row: {
+          id: string;
+          code: string;
+          referrer_organization_id: string;
+          referred_organization_id: string;
+          rewarded_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          referrer_organization_id: string;
+          referred_organization_id: string;
+          rewarded_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["referral_redemptions"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "referral_redemptions_referrer_organization_id_fkey";
+            columns: ["referrer_organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referral_redemptions_referred_organization_id_fkey";
+            columns: ["referred_organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       members: {
         Row: {
@@ -691,6 +764,10 @@ export type Database = {
       post_targets_due_for_sync: {
         Args: Record<string, never>;
         Returns: Database["public"]["Tables"]["post_targets"]["Row"][];
+      };
+      organizations_with_expired_trial: {
+        Args: Record<string, never>;
+        Returns: Database["public"]["Tables"]["organizations"]["Row"][];
       };
       conversion_funnel: {
         Args: { p_organization_id: string; p_since: string };

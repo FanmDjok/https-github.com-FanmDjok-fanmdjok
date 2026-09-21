@@ -38,6 +38,10 @@ export function isoDaysAgo(days: number) {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 }
 
+export function daysUntil(date: string | Date) {
+  return Math.max(0, Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
 export function formatDateTime(date: string | Date) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",

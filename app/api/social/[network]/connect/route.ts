@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentOrganizationId } from "@/lib/organizations";
 import { getSocialProvider } from "@/lib/social/registry";
 import type { NetworkId } from "@/lib/networks";
+import { PLAN_LIMITS } from "@/lib/limits";
+import { countConnectedSocialAccounts } from "@/lib/usage";
 
 const OAUTH_STATE_COOKIE = "growthis-oauth-state";
 
@@ -22,9 +24,21 @@ export async function GET(
     return NextResponse.redirect(new URL("/login", origin));
   }
 
-  const { currentId } = await getCurrentOrganizationId(supabase, user.id);
-  if (!currentId) {
+  const { currentId, orgs } = await getCurrentOrganizationId(supabase, user.id);
+  const org = orgs.find((o) => o.id === currentId);
+  if (!currentId || !org) {
     return NextResponse.redirect(new URL("/onboarding", origin));
+  }
+
+  const networkLimit = PLAN_LIMITS[org.plan].connectedNetworks;
+  if (networkLimit !== null) {
+    const connected = await countConnectedSocialAccounts(supabase, currentId);
+    if (connected >= networkLimit) {
+      const message = encodeURIComponent(
+        `Votre formule est limitée à ${networkLimit} réseau(x) connecté(s). Passez à une formule supérieure pour en connecter d'autres.`,
+      );
+      return NextResponse.redirect(new URL(`/publier/comptes?error=${message}`, origin));
+    }
   }
 
   const provider = getSocialProvider(network as NetworkId);

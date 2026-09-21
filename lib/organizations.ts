@@ -9,6 +9,8 @@ export type OrganizationSummary = {
   slug: string;
   plan: "gratuit" | "essentiel" | "business";
   brand_color: string | null;
+  trial_ends_at: string | null;
+  referral_code: string | null;
   role: "owner" | "collaborateur";
 };
 
@@ -18,7 +20,7 @@ export async function getUserOrganizations(
 ): Promise<OrganizationSummary[]> {
   const { data, error } = await supabase
     .from("members")
-    .select("role, organizations(id, name, slug, plan, brand_color)")
+    .select("role, organizations(id, name, slug, plan, brand_color, trial_ends_at, referral_code)")
     .eq("user_id", userId);
 
   if (error || !data) return [];
@@ -32,6 +34,8 @@ export async function getUserOrganizations(
         slug: string;
         plan: "gratuit" | "essentiel" | "business";
         brand_color: string | null;
+        trial_ends_at: string | null;
+        referral_code: string | null;
       };
       return { ...org, role: row.role as "owner" | "collaborateur" };
     });

@@ -8,6 +8,8 @@ import { generateStructured } from "@/lib/ai/generate";
 import { LeadMagnetPlanSchema, type LeadMagnetPlan } from "@/lib/ai/schemas";
 import { BRAND_VOICE, formatPositioning } from "@/lib/ai/prompts";
 import { renderLeadMagnetPdf } from "@/lib/pdf/lead-magnet";
+import { PLAN_LIMITS } from "@/lib/limits";
+import { countLeadMagnets } from "@/lib/usage";
 
 export async function generateLeadMagnetPlan(
   topic: string,
@@ -58,6 +60,19 @@ export async function publishLeadMagnet(
 
   if (!title.trim() || sections.length === 0) {
     return { error: "Le titre et au moins une section sont requis." };
+  }
+
+  const limit = PLAN_LIMITS[org.plan].leadMagnets;
+  if (limit !== null) {
+    const current = await countLeadMagnets(supabase, currentId);
+    if (current >= limit) {
+      return {
+        error:
+          limit === 0
+            ? "Les aimants à prospects sont réservés aux formules Essentiel et Business."
+            : `Votre formule est limitée à ${limit} aimant(s) à prospects. Passez à une formule supérieure pour en créer d'autres.`,
+      };
+    }
   }
 
   const { data: created, error: insertError } = await supabase

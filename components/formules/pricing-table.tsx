@@ -1,15 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { cn, formatEUR } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PLANS } from "@/lib/sample-data";
+import { checkoutPlan } from "@/app/(app)/formules/actions";
 import { Check } from "lucide-react";
 
-export function PricingTable({ currentPlan }: { currentPlan: string }) {
+export function PricingTable({
+  currentPlan,
+  referralCode = "",
+}: {
+  currentPlan: string;
+  referralCode?: string;
+}) {
   const [yearly, setYearly] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSelect(planId: string) {
+    if (planId === "gratuit") return;
+    setError(null);
+    setPendingPlan(planId);
+    startTransition(async () => {
+      const result = await checkoutPlan(
+        planId as "essentiel" | "business",
+        yearly ? "yearly" : "monthly",
+        referralCode,
+      );
+      if (result && "error" in result) {
+        setError(result.error ?? "Une erreur est survenue.");
+        setPendingPlan(null);
+      }
+    });
+  }
 
   return (
     <div>
@@ -38,6 +65,10 @@ export function PricingTable({ currentPlan }: { currentPlan: string }) {
         </span>
         <Badge tone="emerald">2 mois offerts</Badge>
       </div>
+
+      {error ? (
+        <p className="mb-4 text-center text-sm text-danger">{error}</p>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {PLANS.map((plan) => {
@@ -77,13 +108,16 @@ export function PricingTable({ currentPlan }: { currentPlan: string }) {
               <Button
                 className="mt-6"
                 variant={isCurrent ? "secondary" : plan.id === "gratuit" ? "secondary" : "primary"}
-                disabled={isCurrent}
+                disabled={isCurrent || plan.id === "gratuit" || pending}
+                onClick={() => handleSelect(plan.id)}
               >
                 {isCurrent
                   ? "Formule actuelle"
-                  : plan.id === "business"
-                    ? "Essayer 14 jours gratuits"
-                    : `Passer à ${plan.name}`}
+                  : pending && pendingPlan === plan.id
+                    ? "Un instant…"
+                    : plan.id === "gratuit"
+                      ? "Formule de base"
+                      : `Passer à ${plan.name}`}
               </Button>
             </Card>
           );

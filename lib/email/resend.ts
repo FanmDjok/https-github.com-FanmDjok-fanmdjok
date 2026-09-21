@@ -85,6 +85,71 @@ export async function sendManualPublishReminderEmail({
   });
 }
 
+export async function sendWelcomeEmail({ to, fullName }: { to: string; fullName: string }) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Bienvenue dans votre atelier Growthis",
+    html: `
+      <p>Bonjour ${escapeHtml(fullName)},</p>
+      <p>Votre atelier Growthis est prêt. Vous démarrez avec 14 jours d'essai de la formule Business, sans carte bancaire.</p>
+      <p>Première étape : définissez votre positionnement dans Attirer, puis générez vos premières idées de contenu.</p>
+      <p>À très vite,<br />L'équipe Growthis</p>
+    `,
+  });
+}
+
+export async function sendTrialEndingSoonEmail({
+  to,
+  orgName,
+  daysLeft,
+}: {
+  to: string;
+  orgName: string;
+  daysLeft: number;
+}) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Votre essai Business se termine dans ${daysLeft} jours`,
+    html: `
+      <p>Bonjour,</p>
+      <p>L'essai Business de ${escapeHtml(orgName)} se termine dans ${daysLeft} jours. Passé ce délai, votre organisation repasse automatiquement en formule Gratuite, sans perte de données.</p>
+      <p>Pour continuer sans interruption, choisissez une formule payante depuis la page Formules.</p>
+    `,
+  });
+}
+
+export async function sendPaymentFailedEmail({ to, orgName }: { to: string; orgName: string }) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Échec du paiement de votre abonnement Growthis",
+    html: `
+      <p>Bonjour,</p>
+      <p>Le dernier paiement de l'abonnement de ${escapeHtml(orgName)} a échoué.</p>
+      <p>Mettez à jour votre moyen de paiement depuis la page Formules pour éviter une interruption de service.</p>
+    `,
+  });
+}
+
+export async function sendReferralRewardEmail({ to, orgName }: { to: string; orgName: string }) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Un mois offert grâce à votre parrainage",
+    html: `
+      <p>Bonjour,</p>
+      <p>La personne que vous avez parrainée vient de s'abonner à Growthis : un mois est offert sur l'abonnement de ${escapeHtml(orgName)}.</p>
+      <p>Merci de faire connaître Growthis autour de vous.</p>
+    `,
+  });
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")

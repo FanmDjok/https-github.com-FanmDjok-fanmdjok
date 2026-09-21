@@ -9,6 +9,8 @@ import { CaptionAdaptationSchema } from "@/lib/ai/schemas";
 import { BRAND_VOICE } from "@/lib/ai/prompts";
 import { NETWORKS, type NetworkId } from "@/lib/networks";
 import { generateLinkCode } from "@/lib/tracked-links";
+import { PLAN_LIMITS } from "@/lib/limits";
+import { countPostsThisMonth } from "@/lib/usage";
 
 const NETWORK_TONE: Record<NetworkId, string> = {
   instagram: "Ton chaleureux, quelques hashtags pertinents, légende de longueur moyenne.",
@@ -50,8 +52,9 @@ export async function createPost(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Vous devez être connecté." };
 
-  const { currentId } = await getCurrentOrganizationId(supabase, user.id);
-  if (!currentId) return { error: "Aucune marque sélectionnée." };
+  const { currentId, orgs } = await getCurrentOrganizationId(supabase, user.id);
+  const org = orgs.find((o) => o.id === currentId);
+  if (!currentId || !org) return { error: "Aucune marque sélectionnée." };
 
   const caption = String(formData.get("caption") ?? "").trim();
   const mediaAssetId = String(formData.get("mediaAssetId") ?? "") || null;
@@ -68,6 +71,16 @@ export async function createPost(
 
   if (!caption && !mediaAssetId) return { error: "Ajoutez un texte ou un média." };
   if (networks.length === 0) return { error: "Sélectionnez au moins un réseau." };
+
+  const postsLimit = PLAN_LIMITS[org.plan].postsPerMonth;
+  if (postsLimit !== null) {
+    const alreadyThisMonth = await countPostsThisMonth(supabase, currentId);
+    if (alreadyThisMonth + networks.length > postsLimit) {
+      return {
+        error: `Votre formule est limitée à ${postsLimit} publications programmées par mois. Passez à une formule supérieure pour publier sans limite.`,
+      };
+    }
+  }
 
   const scheduledAt =
     scheduleMode === "later" && date && time

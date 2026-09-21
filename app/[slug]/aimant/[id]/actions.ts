@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendLeadMagnetEmail } from "@/lib/email/resend";
+import { PLAN_LIMITS } from "@/lib/limits";
+import { countLeads } from "@/lib/usage";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 jours
 const ATTRIBUTION_COOKIE = "gr_attr";
@@ -27,6 +29,19 @@ export async function submitLeadCapture(
   const { data: magnetRows } = await supabase.rpc("get_public_lead_magnet", { p_id: magnetId });
   const magnet = magnetRows?.[0];
   if (!magnet) return { error: "Cet aimant n'est plus disponible." };
+
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("plan")
+    .eq("id", magnet.organization_id)
+    .single();
+  const limit = org ? PLAN_LIMITS[org.plan].leads : null;
+  if (limit !== null && limit !== undefined) {
+    const current = await countLeads(supabase, magnet.organization_id);
+    if (current >= limit) {
+      return { error: "Ce formulaire n'accepte plus de nouvelles inscriptions pour le moment." };
+    }
+  }
 
   // Attribution : si ce visiteur est arrivé via un lien suivi (bouton de la
   // page lien en bio généré pour une publication), on le rattache.
