@@ -41,6 +41,20 @@ analyses, conseils).
   complet (tunnel de conversion, prospects par semaine, contenus qui
   rapportent, prospects par réseau, lecture IA) et Analyse de publication
   (Attirer) sur des données réelles.
+- **Phase 6** ✅ : Stripe — essai Business 14 jours à l'inscription (sans
+  carte), Checkout/portail de facturation, pause d'abonnement (1 à 3 mois),
+  parrainage (1 mois offert des deux côtés), webhooks synchronisant
+  l'abonnement et la formule de l'organisation, limites de formule étendues
+  (réseaux connectés, publications/mois, prospects, aimants à prospects).
+  Code complet et testé unitairement ; **en attente de clés Stripe dédiées**
+  pour une vérification en conditions réelles (voir
+  [Configurer Stripe](#configurer-stripe)).
+- **Phase 7** ✅ : PWA installable (manifest, icônes, service worker), pages
+  légales (mentions légales, confidentialité, CGU, CGV), export RGPD complet
+  et suppression d'organisation, callback de suppression de données Meta,
+  emails transactionnels supplémentaires (bienvenue, fin d'essai, échec de
+  paiement, récompense de parrainage), suite de tests (`npm test`),
+  documentation de déploiement Vercel.
 
 Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 
@@ -51,10 +65,13 @@ Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
   toutes les tables, Storage pour les médias
 - **Anthropic (Claude API)** pour tous les contenus texte, réponses JSON
   validées par `zod` (Phase 2)
-- **Stripe** : abonnements, essai, portail client, webhooks (Phase 6)
-- **Inngest** pour la file de publication programmée et les synchronisations
-  de statistiques (retries automatiques, backoff exponentiel)
+- **Stripe** : abonnements, essai, portail client, pause, parrainage, webhooks
+- **Inngest** pour la file de publication programmée, les synchronisations
+  de statistiques et l'expiration des essais (retries automatiques, backoff
+  exponentiel)
 - **Resend** pour les emails transactionnels
+- **Vitest** pour les tests unitaires (`npm test`)
+- PWA installable (manifest + service worker)
 - Déploiement sur **Vercel**
 
 > Next.js 16 introduit des changements importants par rapport aux versions
@@ -84,11 +101,18 @@ Ouvrez [http://localhost:3000](http://localhost:3000).
    exposée au client, réservée aux tâches serveur).
 4. Activez le fournisseur **Google** dans Authentication → Providers, et
    renseignez l'URL de callback `https://<votre-projet>.supabase.co/auth/v1/callback`.
-5. Appliquez les migrations SQL du dossier `supabase/migrations/` (via le
-   SQL Editor de Supabase, ou `supabase db push` avec la CLI Supabase). La
-   migration `0003_capter.sql` crée aussi le bucket Storage privé
-   `lead-magnets` (PDF des aimants à prospects) — aucune étape manuelle
-   n'est nécessaire dans le tableau de bord Storage.
+5. Appliquez les migrations SQL du dossier `supabase/migrations/`, **dans
+   l'ordre numérique**, via le SQL Editor de Supabase ou `supabase db push`
+   avec la CLI Supabase. La migration `0003_capter.sql` crée aussi le bucket
+   Storage privé `lead-magnets` (PDF des aimants à prospects) — aucune étape
+   manuelle n'est nécessaire dans le tableau de bord Storage.
+   `0008_security_lockdown.sql` doit rester la **dernière** migration
+   appliquée : Supabase réaccorde automatiquement `EXECUTE` à `anon`/
+   `authenticated` sur les fonctions du schéma `public` à chaque nouvelle
+   migration (pas seulement à la création), ce qui annule silencieusement les
+   `revoke` faits par les migrations précédentes sur les fonctions réservées
+   à `service_role`. Si vous ajoutez une migration après celle-ci, ré-exécutez
+   `0008` ensuite (elle est idempotente).
 6. Créez une clé sur [resend.com](https://resend.com/api-keys) et
    renseignez `RESEND_API_KEY` pour l'envoi automatique des documents
    d'aimants à prospects (`RESEND_FROM_EMAIL` doit être un domaine vérifié
@@ -114,6 +138,36 @@ base avec `ENCRYPTION_KEY` avant stockage.
 4. Sans clé valide, les pages Idées / Scripts / Carrousels / Conseil
    affichent une erreur de génération au lieu de planter : le reste de
    l'application (auth, navigation, positionnement) fonctionne normalement.
+
+### Configurer Stripe
+
+1. Créez un compte sur [dashboard.stripe.com](https://dashboard.stripe.com)
+   (utilisez le **mode test** tant que vous n'êtes pas prêt à facturer
+   réellement).
+2. Créez deux produits (« Essentiel » et « Business »), chacun avec un prix
+   mensuel et un prix annuel récurrents. Copiez les 4 `price_...` obtenus dans
+   `STRIPE_PRICE_ESSENTIEL_MONTHLY`, `STRIPE_PRICE_ESSENTIEL_YEARLY`,
+   `STRIPE_PRICE_BUSINESS_MONTHLY`, `STRIPE_PRICE_BUSINESS_YEARLY`.
+3. Copiez la clé secrète (`sk_test_...` ou `sk_live_...`) dans
+   `STRIPE_SECRET_KEY`.
+4. Activez le [portail client Stripe](https://dashboard.stripe.com/settings/billing/portal)
+   (Billing → Customer portal) pour que le bouton « Gérer la facturation »
+   fonctionne.
+5. Créez un endpoint de webhook pointant vers
+   `<NEXT_PUBLIC_APP_URL>/api/stripe/webhook`, écoutant au minimum
+   `checkout.session.completed`, `customer.subscription.created`,
+   `customer.subscription.updated`, `customer.subscription.deleted` et
+   `invoice.payment_failed`. Copiez le secret de signature (`whsec_...`) dans
+   `STRIPE_WEBHOOK_SECRET`. En local, `stripe listen --forward-to
+   localhost:3000/api/stripe/webhook` fournit un secret temporaire.
+6. Le coupon de parrainage (1 mois offert, 100 %, une seule fois) est créé
+   automatiquement au premier parrainage utilisé — aucune étape manuelle.
+
+**Important** : le connecteur Stripe éventuellement disponible dans un
+environnement de développement partagé peut pointer vers un compte Stripe
+sans rapport avec Growthis (une autre activité, en mode production) — ne
+créez jamais de produits/prix/webhooks dessus. Utilisez toujours un compte
+Stripe dédié à Growthis, de préférence en mode test durant le développement.
 
 ## Configurer chaque réseau (Publier — Phase 4)
 
@@ -199,40 +253,112 @@ Vous aurez aussi besoin de :
    multi-réseaux, file de tâches, calendrier. Instagram + Facebook d'abord,
    puis LinkedIn, puis TikTok et YouTube. Mode sans API dès le départ.
 5. **Phase 5** ✅ — synchronisation des statistiques, module Mesurer complet.
-6. **Phase 6** *(à venir)* — Stripe (formules, essai, limites, pause, parrainage).
-7. **Phase 7** — PWA, conformité RGPD, emails, tests de bout en bout,
-   déploiement.
+6. **Phase 6** ✅ — Stripe (formules, essai, limites, pause, parrainage).
+7. **Phase 7** ✅ — PWA, conformité RGPD, emails, tests unitaires,
+   documentation de déploiement.
 
-À la fin de chaque phase, l'avancement est présenté avant de passer à la
-suivante.
+Première version complète : toutes les phases du cahier des charges sont
+codées et testées unitairement. Reste à valider en conditions réelles ce qui
+dépend de services externes non accessibles depuis l'environnement de
+développement (clés Stripe dédiées, comptes développeurs réseaux sociaux
+validés, déploiement effectif) — voir les sections « Limites connues »
+ci-dessus et [Déploiement](#déploiement-vercel).
 
 ## Structure du projet
 
 ```
 app/
   (auth)/           connexion, inscription
+  (legal)/           mentions légales, confidentialité, CGU, CGV (public)
   (app)/             application protégée (sidebar + bottom nav)
     attirer/         positionnement, idées, scripts, carrousels, planning, analyse
     capter/          page lien en bio, aimants, prospects
     publier/         calendrier, éditeur multi-réseaux, comptes, médiathèque, liens
     mesurer/         parcours de conversion, statistiques
     conseil/         conseiller IA, fiches conseil
-    formules/        tarifs, abonnement
-  onboarding/        création d'une marque
+    formules/        tarifs, abonnement, actions Stripe (checkout/portail/pause)
+    parametres/      export et suppression RGPD
+  api/
+    stripe/          checkout webhook
+    rgpd/            export JSON
+    social/          OAuth + connect/callback + data-deletion (Meta)
+  onboarding/        création d'une marque (essai Business 14 jours)
   auth/              callback OAuth, server actions
 components/
   ui/                design system (Button, Card, Badge, Input, Tabs, …)
   nav/               sidebar, barre du bas, sélecteur de marque
-  attirer/ capter/ publier/ mesurer/ conseil/ formules/  composants par module
+  attirer/ capter/ publier/ mesurer/ conseil/ formules/ parametres/  composants par module
 lib/
   supabase/          clients navigateur/serveur, session (proxy.ts)
+  stripe/            client Stripe, mapping des prix, synchronisation d'abonnement
+  inngest/functions/ file de publication, sync statistiques, expiration des essais
   sample-data.ts     données d'exemple (Phase 1)
 supabase/
   migrations/        schéma SQL, RLS
+test/
+  fake-supabase.ts   faux client PostgREST pour les tests unitaires
 ```
 
 ## Tests
 
-À écrire au fil des phases pour : la file de publication (succès, échec
-partiel, tentatives), le rafraîchissement des jetons, les limites des
-formules, les webhooks Stripe et l'attribution publication → prospect.
+```bash
+npm test
+```
+
+Suite Vitest (36 tests, aucun accès réseau ni projet Supabase requis — un
+faux client PostgREST minimal dans `test/fake-supabase.ts` simule les
+requêtes) couvrant :
+
+- la file de publication (succès, mode sans API, échec temporaire avec
+  relance, échec définitif, jeton à reconnecter, contraintes réseau) ;
+- le rafraîchissement de jeton (jeton valide, rafraîchissement + rechiffrement,
+  échec de rafraîchissement) ;
+- les limites de formule (cohérence des paliers, compteurs, blocage au seuil) ;
+- les webhooks Stripe (signature invalide, synchronisation d'abonnement,
+  résolution via `checkout.session.completed`) ;
+- la synchronisation des statuts Stripe vers la formule de l'organisation ;
+- l'attribution publication → lien suivi → prospect.
+
+## PWA
+
+L'application est installable (manifest + service worker minimal qui met en
+cache le shell applicatif, jamais les routes `/api`). Pour régénérer les
+icônes après une modification de la charte : `node scripts/generate-icons.mjs`
+(nécessite `sharp`, déjà en dépendance).
+
+## RGPD
+
+- **Export** : chaque organisation peut télécharger l'intégralité de ses
+  données (`/parametres`, ou directement `GET /api/rgpd/export`) — exclut
+  systématiquement les jetons sociaux chiffrés et les fichiers binaires.
+- **Suppression** : suppression d'organisation avec confirmation par saisie
+  du slug (`/parametres`) — annule l'abonnement Stripe, vide les buckets
+  Storage, puis supprime la ligne `organizations` (cascade SQL pour le reste).
+- **Callback Meta** : `/api/social/data-deletion` vérifie le `signed_request`
+  (HMAC SHA-256) envoyé par Meta et répond au format attendu par l'App
+  Review. Limite connue : les comptes sociaux stockent l'identifiant de la
+  Page/du compte Instagram Business, pas celui de la personne ayant autorisé
+  l'app, donc la correspondance exacte avec une organisation n'est pas
+  garantie — la demande est journalisée dans tous les cas.
+- Pages légales publiques : `/mentions-legales`, `/confidentialite`, `/cgu`,
+  `/cgv` — **les mentions légales contiennent des champs entre crochets à
+  compléter avec les informations réelles de l'entreprise avant mise en
+  production**.
+
+## Déploiement (Vercel)
+
+1. Importez le dépôt sur [vercel.com](https://vercel.com/new).
+2. Renseignez toutes les variables de `.env.example` dans les paramètres du
+   projet Vercel (Production **et** Preview si vous testez sur des branches).
+3. `NEXT_PUBLIC_APP_URL` doit être l'URL de production exacte (utilisée pour
+   les redirections OAuth, Stripe et les liens dans les emails).
+4. Mettez à jour, dans chaque application développeur (Meta, TikTok,
+   LinkedIn, Google) et dans Stripe, les URLs de callback/webhook avec le
+   domaine de production.
+5. Le endpoint `/api/inngest` est découvert automatiquement par Inngest en
+   production une fois `INNGEST_EVENT_KEY`/`INNGEST_SIGNING_KEY` renseignées
+   (créez une app sur [app.inngest.com](https://app.inngest.com) et
+   synchronisez l'URL `https://<votre-domaine>/api/inngest`) — sans ça, la
+   file de publication programmée et les jobs planifiés (statistiques,
+   expiration des essais) ne s'exécutent pas.
+6. Vérifiez `npm run build` et `npm test` en local avant de déployer.
