@@ -1,11 +1,18 @@
-// Types minimales pour la phase 1. À régénérer avec
-// `npx supabase gen types typescript --project-id <id>` une fois le schéma
-// complet déployé (voir supabase/migrations).
+// Types Database maintenues à la main pour préserver les unions littérales
+// (statuts, réseaux, formules...) utilisées dans tout le code applicatif —
+// `npx supabase gen types typescript` ne peut pas les inférer depuis de
+// simples contraintes CHECK et les remplace par `string`. Les métadonnées
+// `Relationships` ci-dessous, elles, sont synchronisées avec le schéma réel
+// du projet uzbkluwxgmlvbklfjbor (régénérées via le connecteur MCP Supabase
+// après déploiement des migrations 0001 à 0006).
 
 export type LinkButton = { id: string; label: string; url: string; code?: string };
 export type LeadMagnetSection = { title: string; body: string };
 
 export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       organizations: {
@@ -92,7 +99,15 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["positioning"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "positioning_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       scripts: {
         Row: {
@@ -122,7 +137,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["scripts"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "scripts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       carousels: {
         Row: {
@@ -144,7 +167,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["carousels"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "carousels_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       coach_messages: {
         Row: {
@@ -164,7 +195,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["coach_messages"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       usage_counters: {
         Row: {
@@ -182,7 +221,15 @@ export type Database = {
           count?: number;
         };
         Update: Partial<Database["public"]["Tables"]["usage_counters"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "usage_counters_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       link_pages: {
         Row: {
@@ -204,7 +251,15 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["link_pages"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "link_pages_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: true;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       lead_magnets: {
         Row: {
@@ -230,7 +285,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["lead_magnets"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "lead_magnets_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       leads: {
         Row: {
@@ -260,7 +323,29 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["leads"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "leads_lead_magnet_id_fkey";
+            columns: ["lead_magnet_id"];
+            isOneToOne: false;
+            referencedRelation: "lead_magnets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leads_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leads_tracked_link_id_fkey";
+            columns: ["tracked_link_id"];
+            isOneToOne: false;
+            referencedRelation: "tracked_links";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       tracked_links: {
         Row: {
@@ -284,7 +369,22 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tracked_links"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "tracked_links_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tracked_links_post_target_id_fkey";
+            columns: ["post_target_id"];
+            isOneToOne: false;
+            referencedRelation: "post_targets";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       social_accounts: {
         Row: {
@@ -316,7 +416,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["social_accounts"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "social_accounts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       media_assets: {
         Row: {
@@ -342,7 +450,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["media_assets"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       posts: {
         Row: {
@@ -364,7 +480,22 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["posts"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "posts_media_asset_id_fkey";
+            columns: ["media_asset_id"];
+            isOneToOne: false;
+            referencedRelation: "media_assets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "posts_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       post_targets: {
         Row: {
@@ -400,7 +531,22 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["post_targets"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "post_targets_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "post_targets_post_id_fkey";
+            columns: ["post_id"];
+            isOneToOne: false;
+            referencedRelation: "posts";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       post_metrics: {
         Row: {
@@ -428,7 +574,22 @@ export type Database = {
           clicks?: number;
         };
         Update: Partial<Database["public"]["Tables"]["post_metrics"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "post_metrics_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "post_metrics_post_target_id_fkey";
+            columns: ["post_target_id"];
+            isOneToOne: false;
+            referencedRelation: "post_targets";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       notifications: {
         Row: {
@@ -450,7 +611,15 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "notifications_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
@@ -466,7 +635,22 @@ export type Database = {
           saves: number;
           clicks: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "post_metrics_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "post_metrics_post_target_id_fkey";
+            columns: ["post_target_id"];
+            isOneToOne: false;
+            referencedRelation: "post_targets";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Functions: {
