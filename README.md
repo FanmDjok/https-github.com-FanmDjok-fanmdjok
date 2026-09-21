@@ -20,6 +20,11 @@ analyses, conseils).
   en base, conseiller IA avec historique et limite mensuelle en formule
   Gratuite. Le planning éditorial 30 jours et l'analyse de publication
   restent en données d'exemple (ils dépendent de Publier/Mesurer, Phases 4-5).
+- **Phase 3** ✅ : page lien en bio publique et persistée (`/[slug]`), liens
+  suivis avec compteur de clics (`/l/[code]`), aimants à prospects avec plan
+  généré par l'IA, PDF à la charte de la marque (Supabase Storage) et page
+  de capture publique conforme RGPD, envoi automatique par email (Resend),
+  prospects en base avec export CSV et messages de relance générés par l'IA.
 
 Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 
@@ -64,7 +69,14 @@ Ouvrez [http://localhost:3000](http://localhost:3000).
 4. Activez le fournisseur **Google** dans Authentication → Providers, et
    renseignez l'URL de callback `https://<votre-projet>.supabase.co/auth/v1/callback`.
 5. Appliquez les migrations SQL du dossier `supabase/migrations/` (via le
-   SQL Editor de Supabase, ou `supabase db push` avec la CLI Supabase).
+   SQL Editor de Supabase, ou `supabase db push` avec la CLI Supabase). La
+   migration `0003_capter.sql` crée aussi le bucket Storage privé
+   `lead-magnets` (PDF des aimants à prospects) — aucune étape manuelle
+   n'est nécessaire dans le tableau de bord Storage.
+6. Créez une clé sur [resend.com](https://resend.com/api-keys) et
+   renseignez `RESEND_API_KEY` pour l'envoi automatique des documents
+   d'aimants à prospects (`RESEND_FROM_EMAIL` doit être un domaine vérifié
+   dans Resend en production).
 
 ### Variables d'environnement
 
@@ -116,9 +128,9 @@ signalé.
    organisations/marques, navigation, tous les écrans avec données d'exemple.
 2. **Phase 2** ✅ — positionnement, idées, scripts + prompteur, carrousels,
    conseiller (API Claude).
-3. **Phase 3** *(à venir)* — page lien en bio, aimants (PDF), capture de prospects,
+3. **Phase 3** ✅ — page lien en bio, aimants (PDF), capture de prospects,
    liens suivis.
-4. **Phase 4** — Publier : `SocialProvider`, médiathèque, éditeur
+4. **Phase 4** *(à venir)* — Publier : `SocialProvider`, médiathèque, éditeur
    multi-réseaux, file de tâches, calendrier. Instagram + Facebook d'abord,
    puis LinkedIn, puis TikTok et YouTube. Mode sans API dès le départ.
 5. **Phase 5** — synchronisation des statistiques, module Mesurer complet.

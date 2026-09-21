@@ -24,6 +24,16 @@ export function formatDate(date: string | Date) {
   }).format(new Date(date));
 }
 
+export function daysSince(date: string | Date) {
+  const days = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)),
+  );
+  if (days === 0) return "aujourd'hui";
+  if (days === 1) return "1 jour";
+  return `${days} jours`;
+}
+
 export function formatDateTime(date: string | Date) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",

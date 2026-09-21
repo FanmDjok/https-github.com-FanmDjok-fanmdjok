@@ -32,3 +32,22 @@ export const CoachReplySchema = z.object({
   reply: z.string().describe("Réponse du conseiller, concrète et vouvoyée"),
 });
 export type CoachReply = z.infer<typeof CoachReplySchema>;
+
+export const LeadMagnetPlanSchema = z.object({
+  title: z.string(),
+  sections: z
+    .array(
+      z.object({
+        title: z.string(),
+        body: z.string().describe("Contenu de la section, quelques phrases concrètes"),
+      }),
+    )
+    .min(4)
+    .max(8),
+});
+export type LeadMagnetPlan = z.infer<typeof LeadMagnetPlanSchema>;
+
+export const ReactivationMessageSchema = z.object({
+  message: z.string().describe("Message de relance court, prêt à envoyer"),
+});
+export type ReactivationMessage = z.infer<typeof ReactivationMessageSchema>;

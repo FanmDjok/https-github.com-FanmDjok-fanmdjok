@@ -1,7 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/mentions-legales", "/confidentialite", "/cgv"];
+// Seuls ces préfixes exigent une session : le reste (pages publiques,
+// page lien en bio d'un utilisateur, capture d'aimants, liens suivis,
+// pages légales) doit rester accessible aux visiteurs anonymes.
+const PROTECTED_PREFIXES = [
+  "/attirer",
+  "/capter",
+  "/publier",
+  "/mesurer",
+  "/conseil",
+  "/formules",
+  "/onboarding",
+];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -30,9 +41,9 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p)) || path === "/";
+  const isProtected = path === "/" || PROTECTED_PREFIXES.some((p) => path.startsWith(p));
 
-  if (!user && !isPublic) {
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);

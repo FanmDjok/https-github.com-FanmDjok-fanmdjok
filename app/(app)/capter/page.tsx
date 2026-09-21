@@ -1,32 +1,65 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentOrganizationId } from "@/lib/organizations";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionTabs } from "@/components/nav/section-tabs";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CAPTER_TABS } from "@/lib/nav";
-import { sampleLinkPage, sampleLeadMagnets, sampleLeads } from "@/lib/sample-data";
 import { ArrowRight, Link2, Gift, Users } from "lucide-react";
 
-export default function CapterPage() {
-  const newLeads = sampleLeads.filter((l) => l.status === "Nouveau").length;
+export default async function CapterPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { currentId } = await getCurrentOrganizationId(supabase, user.id);
+
+  const [{ data: linkPage }, { data: magnets }, { count: leadsCount }, { count: newLeadsCount }] =
+    currentId
+      ? await Promise.all([
+          supabase.from("link_pages").select("slug, buttons").eq("organization_id", currentId).maybeSingle(),
+          supabase
+            .from("lead_magnets")
+            .select("id, status, leads(count)")
+            .eq("organization_id", currentId),
+          supabase.from("leads").select("id", { count: "exact", head: true }).eq("organization_id", currentId),
+          supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", currentId)
+            .eq("status", "Nouveau"),
+        ])
+      : [{ data: null }, { data: [] }, { count: 0 }, { count: 0 }];
+
+  const publishedMagnets = (magnets ?? []).filter((m) => m.status === "publié").length;
+  const capturedFromMagnets = (magnets ?? []).reduce(
+    (sum, m) => sum + ((m.leads as unknown as { count: number }[])[0]?.count ?? 0),
+    0,
+  );
 
   const cards = [
     {
       href: "/capter/page-lien",
       icon: Link2,
       title: "Page lien en bio",
-      description: `growthis.io/${sampleLinkPage.slug} — ${sampleLinkPage.buttons.length} boutons actifs.`,
+      description: linkPage
+        ? `growthis.io/${linkPage.slug} — ${linkPage.buttons.length} bouton(s) actif(s).`
+        : "Pas encore publiée — c'est la première chose à faire.",
     },
     {
       href: "/capter/aimants",
       icon: Gift,
       title: "Aimants à prospects",
-      description: `${sampleLeadMagnets.filter((m) => m.status === "Publié").length} aimant publié, ${sampleLeadMagnets.reduce((s, m) => s + m.leads, 0)} prospects capturés.`,
+      description: `${publishedMagnets} aimant(s) publié(s), ${capturedFromMagnets} prospect(s) capturé(s).`,
     },
     {
       href: "/capter/prospects",
       icon: Users,
       title: "Prospects",
-      description: `${sampleLeads.length} prospects au total, dont ${newLeads} nouveaux.`,
+      description: `${leadsCount ?? 0} prospects au total, dont ${newLeadsCount ?? 0} nouveaux.`,
     },
   ];
 
