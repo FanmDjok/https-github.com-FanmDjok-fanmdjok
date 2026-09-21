@@ -282,6 +282,168 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["tracked_links"]["Insert"]>;
         Relationships: [];
       };
+      social_accounts: {
+        Row: {
+          id: string;
+          organization_id: string;
+          network: "instagram" | "facebook" | "tiktok" | "linkedin" | "youtube";
+          external_account_id: string;
+          label: string | null;
+          access_token_encrypted: string;
+          refresh_token_encrypted: string | null;
+          expires_at: string | null;
+          status: "connecté" | "à reconnecter" | "non connecté";
+          meta: Record<string, unknown>;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          network: "instagram" | "facebook" | "tiktok" | "linkedin" | "youtube";
+          external_account_id: string;
+          label?: string | null;
+          access_token_encrypted: string;
+          refresh_token_encrypted?: string | null;
+          expires_at?: string | null;
+          status?: "connecté" | "à reconnecter" | "non connecté";
+          meta?: Record<string, unknown>;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["social_accounts"]["Insert"]>;
+        Relationships: [];
+      };
+      media_assets: {
+        Row: {
+          id: string;
+          organization_id: string;
+          storage_path: string;
+          type: "image" | "vidéo";
+          duration_seconds: number | null;
+          width: number | null;
+          height: number | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          storage_path: string;
+          type: "image" | "vidéo";
+          duration_seconds?: number | null;
+          width?: number | null;
+          height?: number | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["media_assets"]["Insert"]>;
+        Relationships: [];
+      };
+      posts: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          caption: string;
+          media_asset_id: string | null;
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          title?: string;
+          caption?: string;
+          media_asset_id?: string | null;
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["posts"]["Insert"]>;
+        Relationships: [];
+      };
+      post_targets: {
+        Row: {
+          id: string;
+          post_id: string;
+          organization_id: string;
+          network: "instagram" | "facebook" | "tiktok" | "linkedin" | "youtube";
+          caption_override: string | null;
+          status: "en_attente" | "en_cours" | "publié" | "échec" | "sans_connexion";
+          scheduled_at: string;
+          external_id: string | null;
+          external_url: string | null;
+          error: string | null;
+          attempts: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          organization_id: string;
+          network: "instagram" | "facebook" | "tiktok" | "linkedin" | "youtube";
+          caption_override?: string | null;
+          status?: "en_attente" | "en_cours" | "publié" | "échec" | "sans_connexion";
+          scheduled_at?: string;
+          external_id?: string | null;
+          external_url?: string | null;
+          error?: string | null;
+          attempts?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["post_targets"]["Insert"]>;
+        Relationships: [];
+      };
+      post_metrics: {
+        Row: {
+          id: string;
+          post_target_id: string;
+          organization_id: string;
+          captured_at: string;
+          views: number;
+          likes: number;
+          comments: number;
+          shares: number;
+          saves: number;
+          clicks: number;
+        };
+        Insert: {
+          id?: string;
+          post_target_id: string;
+          organization_id: string;
+          captured_at?: string;
+          views?: number;
+          likes?: number;
+          comments?: number;
+          shares?: number;
+          saves?: number;
+          clicks?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["post_metrics"]["Insert"]>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          organization_id: string;
+          type: string;
+          message: string;
+          link: string | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          type: string;
+          message: string;
+          link?: string | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

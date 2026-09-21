@@ -25,6 +25,15 @@ analyses, conseils).
   généré par l'IA, PDF à la charte de la marque (Supabase Storage) et page
   de capture publique conforme RGPD, envoi automatique par email (Resend),
   prospects en base avec export CSV et messages de relance générés par l'IA.
+- **Phase 4** ✅ : module Publier — interface `SocialProvider` commune,
+  adaptateurs Instagram + Facebook (Graph API) complets, LinkedIn et
+  YouTube fonctionnels (scopes limités tant que les validations
+  plateforme ne sont pas obtenues), TikTok en place (visibilité forcée en
+  privé avant audit) ; médiathèque Supabase Storage, éditeur multi-réseaux
+  réel avec légendes adaptées par l'IA, file de tâches Inngest (retries,
+  backoff), calendrier, mode sans API avec rappel par email et
+  confirmation manuelle, notifications in-app et par email en cas
+  d'échec. Voir [Limites connues de Publier](#limites-connues-de-publier).
 
 Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 
@@ -36,8 +45,8 @@ Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 - **Anthropic (Claude API)** pour tous les contenus texte, réponses JSON
   validées par `zod` (Phase 2)
 - **Stripe** : abonnements, essai, portail client, webhooks (Phase 6)
-- **Trigger.dev / Inngest** pour la file de publication programmée et les
-  synchronisations de statistiques (Phase 4-5)
+- **Inngest** pour la file de publication programmée et les synchronisations
+  de statistiques (retries automatiques, backoff exponentiel)
 - **Resend** pour les emails transactionnels
 - Déploiement sur **Vercel**
 
@@ -122,6 +131,39 @@ officielle à jour de chaque API sera vérifiée (formats acceptés, limites,
 quotas, permissions exigées) — tout écart avec le cahier des charges sera
 signalé.
 
+Vous aurez aussi besoin de :
+- `ENCRYPTION_KEY` : `openssl rand -base64 32` (chiffrement des jetons en base).
+- `NEXT_PUBLIC_APP_URL` : doit correspondre exactement à l'URL de callback
+  déclarée dans chaque application développeur
+  (`<NEXT_PUBLIC_APP_URL>/api/social/<reseau>/callback`).
+- Un compte [Inngest](https://app.inngest.com) : en local, `npx inngest-cli@latest dev`
+  lance le serveur de développement qui découvre automatiquement les
+  fonctions exposées sur `/api/inngest`.
+
+### Limites connues de Publier
+
+- **Instagram et Facebook** : implémentation complète (Graph API Content
+  Publishing), mais une seule Page gérée par organisation est prise en
+  charge pour l'instant — un utilisateur gérant plusieurs Pages devra
+  attendre un sélecteur de Page dans une prochaine itération.
+- **LinkedIn** : profil personnel uniquement (texte + image). La vidéo et
+  la publication sur une page entreprise ne sont pas encore câblées.
+- **YouTube** : envoi en un seul appel (pas d'upload par blocs), adapté aux
+  formats Shorts mais à revoir pour des fichiers volumineux.
+- **TikTok** : la visibilité est forcée à « Moi uniquement » par la
+  plateforme tant que l'audit de la Content Posting API n'est pas passé —
+  Growthis respecte cette contrainte plutôt que de la contourner.
+- **Reprogrammation** : un « Réessayer » est disponible sur les échecs,
+  mais changer la date d'une publication déjà en file d'attente n'est pas
+  encore câblé (cela demande l'annulation de la tâche Inngest en cours,
+  pas seulement une mise à jour en base) — évitez de reprogrammer une
+  publication déjà « En attente » pour l'instant.
+- **Statistiques** (`fetchInsights`) : volontairement absentes de cette
+  phase, elles arrivent avec le module Mesurer (Phase 5).
+- Aucun de ces adaptateurs n'a pu être testé avec de vrais comptes dans cet
+  environnement de développement (pas d'accès réseau sortant vers les API
+  concernées) : à valider dès que vos accès développeur seront actifs.
+
 ## Ordre de travail
 
 1. **Phase 1** ✅ — projet, design system Atelier, auth,
@@ -130,10 +172,10 @@ signalé.
    conseiller (API Claude).
 3. **Phase 3** ✅ — page lien en bio, aimants (PDF), capture de prospects,
    liens suivis.
-4. **Phase 4** *(à venir)* — Publier : `SocialProvider`, médiathèque, éditeur
+4. **Phase 4** ✅ — Publier : `SocialProvider`, médiathèque, éditeur
    multi-réseaux, file de tâches, calendrier. Instagram + Facebook d'abord,
    puis LinkedIn, puis TikTok et YouTube. Mode sans API dès le départ.
-5. **Phase 5** — synchronisation des statistiques, module Mesurer complet.
+5. **Phase 5** *(à venir)* — synchronisation des statistiques, module Mesurer complet.
 6. **Phase 6** — Stripe (formules, essai, limites, pause, parrainage).
 7. **Phase 7** — PWA, conformité RGPD, emails, tests de bout en bout,
    déploiement.

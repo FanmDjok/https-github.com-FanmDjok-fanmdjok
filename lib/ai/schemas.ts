@@ -51,3 +51,8 @@ export const ReactivationMessageSchema = z.object({
   message: z.string().describe("Message de relance court, prêt à envoyer"),
 });
 export type ReactivationMessage = z.infer<typeof ReactivationMessageSchema>;
+
+export const CaptionAdaptationSchema = z.object({
+  caption: z.string().describe("Légende adaptée au réseau demandé"),
+});
+export type CaptionAdaptation = z.infer<typeof CaptionAdaptationSchema>;

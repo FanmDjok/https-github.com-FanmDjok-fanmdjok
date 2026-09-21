@@ -34,6 +34,57 @@ export async function sendLeadMagnetEmail({
   });
 }
 
+export async function sendPublishFailedEmail({
+  to,
+  networkLabel,
+  postTitle,
+  reason,
+}: {
+  to: string;
+  networkLabel: string;
+  postTitle: string;
+  reason: string;
+}) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Échec de publication sur ${networkLabel}`,
+    html: `
+      <p>Bonjour,</p>
+      <p>La publication « ${escapeHtml(postTitle)} » n'a pas pu être envoyée sur ${escapeHtml(networkLabel)}.</p>
+      <p>Raison : ${escapeHtml(reason)}</p>
+      <p>Vous pouvez réessayer depuis votre calendrier de publication dans Growthis.</p>
+    `,
+  });
+}
+
+export async function sendManualPublishReminderEmail({
+  to,
+  networkLabel,
+  postTitle,
+  caption,
+}: {
+  to: string;
+  networkLabel: string;
+  postTitle: string;
+  caption: string;
+}) {
+  const resend = getClient();
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `À publier manuellement sur ${networkLabel} : « ${postTitle} »`,
+    html: `
+      <p>Bonjour,</p>
+      <p>${escapeHtml(networkLabel)} n'est pas connecté à Growthis : c'est l'heure de publier « ${escapeHtml(postTitle)} » vous-même.</p>
+      <p>Légende à copier :</p>
+      <blockquote>${escapeHtml(caption)}</blockquote>
+      <p>Récupérez le média depuis votre médiathèque Growthis, publiez-le, puis confirmez dans l'application.</p>
+    `,
+  });
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")

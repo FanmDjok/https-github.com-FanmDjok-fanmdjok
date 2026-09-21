@@ -22,9 +22,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const userLabel = profile?.full_name || user.email || "Votre compte";
 
+  const { data: notifications } = currentId
+    ? await supabase
+        .from("notifications")
+        .select("id, message, link, read, created_at")
+        .eq("organization_id", currentId)
+        .order("created_at", { ascending: false })
+        .limit(15)
+    : { data: [] };
+
   return (
     <div className="flex min-h-screen bg-paper">
-      <Sidebar orgs={orgs} currentOrgId={currentId} userLabel={userLabel} />
+      <Sidebar
+        orgs={orgs}
+        currentOrgId={currentId}
+        userLabel={userLabel}
+        notifications={notifications ?? []}
+      />
       <div className="flex min-w-0 flex-1 flex-col pb-16 lg:pb-0">
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 lg:px-8 lg:py-10">
           {children}

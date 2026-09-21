@@ -12,11 +12,18 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { NETWORKS } from "@/lib/networks";
 import { NetworkIcon } from "@/components/publier/network-icon";
-import { samplePosts } from "@/lib/sample-data";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
-export function CalendarMonth({ month = new Date() }: { month?: Date }) {
+export type CalendarPost = { id: string; title: string; scheduledAt: string };
+
+export function CalendarMonth({
+  month = new Date(),
+  posts,
+}: {
+  month?: Date;
+  posts: CalendarPost[];
+}) {
   const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start, end });
@@ -33,7 +40,7 @@ export function CalendarMonth({ month = new Date() }: { month?: Date }) {
       </div>
       <div className="grid grid-cols-7">
         {days.map((day) => {
-          const posts = samplePosts.filter((p) => isSameDay(new Date(p.scheduledAt), day));
+          const dayPosts = posts.filter((p) => isSameDay(new Date(p.scheduledAt), day));
           return (
             <div
               key={day.toISOString()}
@@ -53,7 +60,7 @@ export function CalendarMonth({ month = new Date() }: { month?: Date }) {
                 {format(day, "d", { locale: fr })}
               </span>
               <div className="mt-1.5 flex flex-col gap-1">
-                {posts.map((post) => (
+                {dayPosts.map((post) => (
                   <div
                     key={post.id}
                     className="truncate rounded-md bg-emerald/10 px-1.5 py-1 text-[11px] font-medium text-emerald"

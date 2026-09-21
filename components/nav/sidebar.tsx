@@ -10,15 +10,18 @@ import type { OrganizationSummary } from "@/lib/organizations";
 import { signOut } from "@/app/auth/actions";
 import { LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { NotificationsBell, type NotificationItem } from "@/components/nav/notifications-bell";
 
 export function Sidebar({
   orgs,
   currentOrgId,
   userLabel,
+  notifications,
 }: {
   orgs: OrganizationSummary[];
   currentOrgId: string | null;
   userLabel: string;
+  notifications: NotificationItem[];
 }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
@@ -59,6 +62,7 @@ export function Sidebar({
       <div className="mt-4 flex items-center justify-between rounded-lg border border-line px-3 py-2.5">
         <span className="truncate text-sm text-ink-secondary">{userLabel}</span>
         <div className="flex items-center gap-3">
+          <NotificationsBell notifications={notifications} />
           <button
             type="button"
             onClick={toggleTheme}
