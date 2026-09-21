@@ -2,12 +2,11 @@ import "server-only";
 import { inngest } from "@/lib/inngest/client";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getSocialProvider } from "@/lib/social/registry";
-import { decryptToken, encryptToken } from "@/lib/crypto";
+import { getValidTokenSet } from "@/lib/social/token-helper";
 import { createNotification } from "@/lib/notifications";
 import { getOrgOwnerEmail } from "@/lib/org-contact";
 import { sendPublishFailedEmail, sendManualPublishReminderEmail } from "@/lib/email/resend";
 import { NETWORKS, type NetworkId } from "@/lib/networks";
-import type { TokenSet } from "@/lib/social/types";
 
 const MAX_ATTEMPTS = 3;
 const MEDIA_SIGNED_URL_TTL = 60 * 60 * 2; // 2 heures — le temps que le réseau récupère le fichier
@@ -47,17 +46,17 @@ async function attemptPublish(postTargetId: string) {
     .update({ status: "en_cours", attempts: target.attempts + 1 })
     .eq("id", postTargetId);
 
-  const { data: account } = await supabase
+  const ownerEmail = await getOrgOwnerEmail(supabase, target.organization_id);
+  const provider = getSocialProvider(network);
+
+  const { data: accountRow } = await supabase
     .from("social_accounts")
-    .select("id, access_token_encrypted, refresh_token_encrypted, expires_at, external_account_id, meta")
+    .select("id, status")
     .eq("organization_id", target.organization_id)
     .eq("network", network)
-    .eq("status", "connecté")
     .maybeSingle();
 
-  const ownerEmail = await getOrgOwnerEmail(supabase, target.organization_id);
-
-  if (!account) {
+  if (!accountRow) {
     // Mode sans API : pas de connexion, on prépare le rappel manuel.
     await supabase
       .from("post_targets")
@@ -81,59 +80,30 @@ async function attemptPublish(postTargetId: string) {
     return { done: true };
   }
 
-  const provider = getSocialProvider(network);
-  let accessToken = decryptToken(account.access_token_encrypted);
-  const refreshTokenValue = account.refresh_token_encrypted
-    ? decryptToken(account.refresh_token_encrypted)
-    : undefined;
-
-  let tokenSet: TokenSet = {
-    accessToken,
-    refreshToken: refreshTokenValue,
-    externalAccountId: account.external_account_id,
-    expiresAt: account.expires_at ? new Date(account.expires_at) : undefined,
-    meta: account.meta as Record<string, unknown>,
-  };
-
-  const valid = await provider.validateToken(tokenSet).catch(() => false);
-  if (!valid) {
-    try {
-      tokenSet = await provider.refreshToken(tokenSet);
-      await supabase
-        .from("social_accounts")
-        .update({
-          access_token_encrypted: encryptToken(tokenSet.accessToken),
-          refresh_token_encrypted: tokenSet.refreshToken
-            ? encryptToken(tokenSet.refreshToken)
-            : account.refresh_token_encrypted,
-          expires_at: tokenSet.expiresAt?.toISOString() ?? null,
-        })
-        .eq("id", account.id);
-      accessToken = tokenSet.accessToken;
-    } catch {
-      await supabase.from("social_accounts").update({ status: "à reconnecter" }).eq("id", account.id);
-      await supabase
-        .from("post_targets")
-        .update({ status: "échec", error: `Le compte ${networkLabel} doit être reconnecté.` })
-        .eq("id", postTargetId);
-      await createNotification(
-        supabase,
-        target.organization_id,
-        "reconnexion",
-        `Votre compte ${networkLabel} doit être reconnecté.`,
-        "/publier/comptes",
-      );
-      if (ownerEmail) {
-        await sendPublishFailedEmail({
-          to: ownerEmail,
-          networkLabel,
-          postTitle: post.title,
-          reason: "le compte doit être reconnecté",
-        }).catch(() => {});
-      }
-      return { done: true };
+  const resolved = await getValidTokenSet(supabase, target.organization_id, network);
+  if (!resolved) {
+    await supabase
+      .from("post_targets")
+      .update({ status: "échec", error: `Le compte ${networkLabel} doit être reconnecté.` })
+      .eq("id", postTargetId);
+    await createNotification(
+      supabase,
+      target.organization_id,
+      "reconnexion",
+      `Votre compte ${networkLabel} doit être reconnecté.`,
+      "/publier/comptes",
+    );
+    if (ownerEmail) {
+      await sendPublishFailedEmail({
+        to: ownerEmail,
+        networkLabel,
+        postTitle: post.title,
+        reason: "le compte doit être reconnecté",
+      }).catch(() => {});
     }
+    return { done: true };
   }
+  const { tokenSet } = resolved;
 
   let mediaUrl: string | null = null;
   let mediaType: "image" | "vidéo" | null = null;
@@ -179,6 +149,7 @@ async function attemptPublish(postTargetId: string) {
         external_id: result.externalId,
         external_url: result.externalUrl ?? null,
         error: null,
+        published_at: new Date().toISOString(),
       })
       .eq("id", postTargetId);
     return { done: true };

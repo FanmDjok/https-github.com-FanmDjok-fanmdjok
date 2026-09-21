@@ -34,6 +34,13 @@ analyses, conseils).
   backoff), calendrier, mode sans API avec rappel par email et
   confirmation manuelle, notifications in-app et par email en cas
   d'échec. Voir [Limites connues de Publier](#limites-connues-de-publier).
+- **Phase 5** ✅ : synchronisation périodique des statistiques (Inngest,
+  toutes les 6h puis quotidienne après 7 jours), import automatique des
+  publications des 90 derniers jours à la connexion d'un compte,
+  attribution publication → lien suivi → prospect, module Mesurer
+  complet (tunnel de conversion, prospects par semaine, contenus qui
+  rapportent, prospects par réseau, lecture IA) et Analyse de publication
+  (Attirer) sur des données réelles.
 
 Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 
@@ -158,11 +165,27 @@ Vous aurez aussi besoin de :
   encore câblé (cela demande l'annulation de la tâche Inngest en cours,
   pas seulement une mise à jour en base) — évitez de reprogrammer une
   publication déjà « En attente » pour l'instant.
-- **Statistiques** (`fetchInsights`) : volontairement absentes de cette
-  phase, elles arrivent avec le module Mesurer (Phase 5).
+- **Statistiques** (`fetchInsights`) : implémentées pour les 5 réseaux
+  (Phase 5), en best-effort — un échec renvoie des zéros plutôt que de
+  bloquer la synchronisation des autres publications.
 - Aucun de ces adaptateurs n'a pu être testé avec de vrais comptes dans cet
   environnement de développement (pas d'accès réseau sortant vers les API
   concernées) : à valider dès que vos accès développeur seront actifs.
+
+### Limites connues de Mesurer
+
+- Les « vues » et « clics » du parcours de conversion ne comptent que les
+  publications synchronisées et leurs liens suivis générés automatiquement
+  — un prospect capturé directement sur la page lien en bio (sans passer
+  par un lien de publication) compte dans « Prospects » mais pas dans
+  « Clics ». C'est une approximation assumée tant que l'attribution n'est
+  pas généralisée à tous les boutons.
+- Les compteurs de clics sont cumulatifs (pas d'horodatage par clic) : le
+  filtrage par période (7/30/90 jours) se fait sur la date de publication
+  du contenu, pas sur la date du clic.
+- LinkedIn, TikTok et YouTube n'ont pas de statistiques de vues fiables
+  tant que les permissions/audits correspondants ne sont pas obtenus (voir
+  les limites de Publier ci-dessus).
 
 ## Ordre de travail
 
@@ -175,8 +198,8 @@ Vous aurez aussi besoin de :
 4. **Phase 4** ✅ — Publier : `SocialProvider`, médiathèque, éditeur
    multi-réseaux, file de tâches, calendrier. Instagram + Facebook d'abord,
    puis LinkedIn, puis TikTok et YouTube. Mode sans API dès le départ.
-5. **Phase 5** *(à venir)* — synchronisation des statistiques, module Mesurer complet.
-6. **Phase 6** — Stripe (formules, essai, limites, pause, parrainage).
+5. **Phase 5** ✅ — synchronisation des statistiques, module Mesurer complet.
+6. **Phase 6** *(à venir)* — Stripe (formules, essai, limites, pause, parrainage).
 7. **Phase 7** — PWA, conformité RGPD, emails, tests de bout en bout,
    déploiement.
 

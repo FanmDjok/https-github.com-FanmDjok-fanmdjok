@@ -9,13 +9,13 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
-import { sampleLeadsPerWeek } from "@/lib/sample-data";
+export type LeadsPerWeek = { week: string; leads: number };
 
-export function LeadsChart() {
+export function LeadsChart({ data }: { data: LeadsPerWeek[] }) {
   return (
     <div className="h-56 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={sampleLeadsPerWeek} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--color-line)" />
           <XAxis
             dataKey="week"

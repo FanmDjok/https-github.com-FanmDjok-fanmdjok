@@ -1,15 +1,16 @@
 import { formatNumber } from "@/lib/utils";
-import { sampleFunnel } from "@/lib/sample-data";
 
-export function Funnel() {
-  const max = sampleFunnel[0].value;
+export type FunnelStage = { stage: string; value: number };
+
+export function Funnel({ stages }: { stages: FunnelStage[] }) {
+  const max = stages[0]?.value || 1;
 
   return (
     <div className="flex flex-col gap-3">
-      {sampleFunnel.map((stage, i) => {
-        const width = Math.max(8, (stage.value / max) * 100);
-        const prev = sampleFunnel[i - 1];
-        const rate = prev ? ((stage.value / prev.value) * 100).toFixed(1) : null;
+      {stages.map((stage, i) => {
+        const width = Math.max(2, (stage.value / max) * 100);
+        const prev = stages[i - 1];
+        const rate = prev && prev.value > 0 ? ((stage.value / prev.value) * 100).toFixed(1) : null;
         return (
           <div key={stage.stage}>
             <div className="mb-1 flex items-baseline justify-between text-sm">
@@ -20,10 +21,7 @@ export function Funnel() {
               </span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-ink/5">
-              <div
-                className="h-full rounded-full bg-emerald"
-                style={{ width: `${width}%` }}
-              />
+              <div className="h-full rounded-full bg-emerald" style={{ width: `${width}%` }} />
             </div>
           </div>
         );

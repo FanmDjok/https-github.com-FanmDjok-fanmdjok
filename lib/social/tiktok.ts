@@ -1,5 +1,12 @@
 import "server-only";
-import type { SocialProvider, TokenSet, PublishInput, PublishResult } from "@/lib/social/types";
+import type {
+  SocialProvider,
+  TokenSet,
+  PublishInput,
+  PublishResult,
+  InsightsSnapshot,
+} from "@/lib/social/types";
+import { EMPTY_INSIGHTS } from "@/lib/social/types";
 
 // TikTok Content Posting API (Direct Post, PULL_FROM_URL). Tant que
 // l'application n'a pas passé l'audit TikTok, les publications sont
@@ -119,5 +126,37 @@ export const tiktokProvider: SocialProvider = {
       issues.push(`La légende dépasse 150 caractères (${input.caption.length}/150).`);
     }
     return issues;
+  },
+
+  async fetchInsights(tokenSet, externalId): Promise<InsightsSnapshot> {
+    try {
+      const res = await fetch(`${API_BASE}/video/query/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${tokenSet.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filters: { video_ids: [externalId] },
+        }),
+      });
+      const body = await res.json();
+      const video = body?.data?.videos?.[0];
+      if (!res.ok || !video) return EMPTY_INSIGHTS;
+
+      return {
+        views: video.view_count ?? 0,
+        likes: video.like_count ?? 0,
+        comments: video.comment_count ?? 0,
+        shares: video.share_count ?? 0,
+        saves: 0,
+        clicks: 0,
+      };
+    } catch {
+      // Les vidéos publiées avant l'audit TikTok sont privées : les
+      // statistiques peuvent être inaccessibles tant que l'audit n'est pas
+      // passé.
+      return EMPTY_INSIGHTS;
+    }
   },
 };

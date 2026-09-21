@@ -8,6 +8,7 @@ import { generateStructured } from "@/lib/ai/generate";
 import { CaptionAdaptationSchema } from "@/lib/ai/schemas";
 import { BRAND_VOICE } from "@/lib/ai/prompts";
 import { NETWORKS, type NetworkId } from "@/lib/networks";
+import { generateLinkCode } from "@/lib/tracked-links";
 
 const NETWORK_TONE: Record<NetworkId, string> = {
   instagram: "Ton chaleureux, quelques hashtags pertinents, légende de longueur moyenne.",
@@ -98,9 +99,31 @@ export async function createPost(
         scheduled_at: scheduledAt,
       })),
     )
-    .select("id");
+    .select("id, network");
 
   if (targetsError || !targets) return { error: "Impossible de programmer les publications." };
+
+  // Chaque publication reçoit un lien de suivi vers la page lien en bio
+  // (paramètres UTM + identifiant de publication), pour savoir plus tard
+  // de quelle publication vient un prospect.
+  const { data: linkPage } = await supabase
+    .from("link_pages")
+    .select("slug")
+    .eq("organization_id", currentId)
+    .maybeSingle();
+
+  if (linkPage) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    await supabase.from("tracked_links").insert(
+      targets.map((t) => ({
+        organization_id: currentId,
+        code: generateLinkCode(),
+        label: `${NETWORKS[t.network as NetworkId].label} — ${post.id.slice(0, 8)}`,
+        target_url: `${appUrl}/${linkPage.slug}?utm_source=${t.network}&utm_medium=social&utm_campaign=post-${post.id}`,
+        post_target_id: t.id,
+      })),
+    );
+  }
 
   await Promise.all(
     targets.map((t) =>

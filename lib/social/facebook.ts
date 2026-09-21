@@ -1,5 +1,12 @@
 import "server-only";
-import type { SocialProvider, TokenSet, PublishInput, PublishResult } from "@/lib/social/types";
+import type {
+  SocialProvider,
+  TokenSet,
+  PublishInput,
+  PublishResult,
+  InsightsSnapshot,
+} from "@/lib/social/types";
+import { EMPTY_INSIGHTS } from "@/lib/social/types";
 import {
   metaAuthorizationUrl,
   exchangeMetaCode,
@@ -84,5 +91,31 @@ export const facebookProvider: SocialProvider = {
       issues.push("Le texte dépasse la limite de caractères de Facebook.");
     }
     return issues;
+  },
+
+  async fetchInsights(tokenSet, externalId): Promise<InsightsSnapshot> {
+    try {
+      const result = await graphGet<{
+        likes?: { summary?: { total_count: number } };
+        comments?: { summary?: { total_count: number } };
+        shares?: { count: number };
+        insights?: { data: { name: string; values: { value: number }[] }[] };
+      }>(`/${externalId}`, {
+        fields:
+          "likes.summary(true),comments.summary(true),shares,insights.metric(post_impressions)",
+        access_token: tokenSet.accessToken,
+      });
+
+      return {
+        views: result.insights?.data[0]?.values[0]?.value ?? 0,
+        likes: result.likes?.summary?.total_count ?? 0,
+        comments: result.comments?.summary?.total_count ?? 0,
+        shares: result.shares?.count ?? 0,
+        saves: 0,
+        clicks: 0,
+      };
+    } catch {
+      return EMPTY_INSIGHTS;
+    }
   },
 };

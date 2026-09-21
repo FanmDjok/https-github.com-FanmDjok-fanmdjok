@@ -10,7 +10,7 @@ import { SectionTabs } from "@/components/nav/section-tabs";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ATTIRER_TABS } from "@/lib/nav";
-import { sampleCarousel, samplePostAnalysis } from "@/lib/sample-data";
+import { sampleCarousel } from "@/lib/sample-data";
 import { ArrowRight, Target, Lightbulb, Video, Layers, CalendarDays, LineChart } from "lucide-react";
 
 export default async function AttirerPage() {
@@ -76,7 +76,7 @@ export default async function AttirerPage() {
       href: "/attirer/analyse",
       icon: LineChart,
       title: "Analyse d'une publication",
-      description: `Exemple : « ${samplePostAnalysis.title} » sur ${samplePostAnalysis.network}.`,
+      description: "Statistiques synchronisées, comparées à vos repères habituels.",
     },
   ];
 

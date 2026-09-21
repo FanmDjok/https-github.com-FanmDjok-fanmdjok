@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSocialProvider } from "@/lib/social/registry";
 import { encryptToken } from "@/lib/crypto";
+import { inngest } from "@/lib/inngest/client";
 import type { NetworkId } from "@/lib/networks";
 
 const OAUTH_STATE_COOKIE = "growthis-oauth-state";
@@ -64,6 +65,13 @@ export async function GET(
     );
 
     if (error) throw error;
+
+    // Remplit le tableau de bord avec les publications des 90 derniers
+    // jours plutôt que de laisser un calendrier vide.
+    await inngest.send({
+      name: "social/account.connected",
+      data: { organizationId, network: network as NetworkId, createdBy: user.id },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
     return NextResponse.redirect(

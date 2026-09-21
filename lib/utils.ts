@@ -34,6 +34,10 @@ export function daysSince(date: string | Date) {
   return `${days} jours`;
 }
 
+export function isoDaysAgo(days: number) {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export function formatDateTime(date: string | Date) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",

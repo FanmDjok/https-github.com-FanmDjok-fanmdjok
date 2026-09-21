@@ -1,5 +1,12 @@
 import "server-only";
-import type { SocialProvider, TokenSet, PublishInput, PublishResult } from "@/lib/social/types";
+import type {
+  SocialProvider,
+  TokenSet,
+  PublishInput,
+  PublishResult,
+  InsightsSnapshot,
+} from "@/lib/social/types";
+import { EMPTY_INSIGHTS } from "@/lib/social/types";
 import {
   metaAuthorizationUrl,
   exchangeMetaCode,
@@ -130,5 +137,30 @@ export const instagramProvider: SocialProvider = {
       );
     }
     return issues;
+  },
+
+  async fetchInsights(tokenSet, externalId): Promise<InsightsSnapshot> {
+    try {
+      const result = await graphGet<{ data: { name: string; values: { value: number }[] }[] }>(
+        `/${externalId}/insights`,
+        { metric: "reach,likes,comments,shares,saved,plays", access_token: tokenSet.accessToken },
+      );
+      const byName = Object.fromEntries(
+        result.data.map((m) => [m.name, m.values[0]?.value ?? 0]),
+      );
+      return {
+        views: byName.plays ?? byName.reach ?? 0,
+        likes: byName.likes ?? 0,
+        comments: byName.comments ?? 0,
+        shares: byName.shares ?? 0,
+        saves: byName.saved ?? 0,
+        clicks: 0,
+      };
+    } catch {
+      // Les métriques disponibles varient selon le type de média (Reel,
+      // image, carrousel) : un échec ne doit pas bloquer la synchronisation
+      // des autres publications.
+      return EMPTY_INSIGHTS;
+    }
   },
 };

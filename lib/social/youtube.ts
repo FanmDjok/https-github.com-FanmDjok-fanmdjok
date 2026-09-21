@@ -1,5 +1,12 @@
 import "server-only";
-import type { SocialProvider, TokenSet, PublishInput, PublishResult } from "@/lib/social/types";
+import type {
+  SocialProvider,
+  TokenSet,
+  PublishInput,
+  PublishResult,
+  InsightsSnapshot,
+} from "@/lib/social/types";
+import { EMPTY_INSIGHTS } from "@/lib/social/types";
 
 // YouTube Shorts — YouTube Data API v3. Tant que l'écran de consentement
 // OAuth n'est pas vérifié par Google, seuls les comptes de test ajoutés au
@@ -139,5 +146,28 @@ export const youtubeProvider: SocialProvider = {
     if (input.mediaType !== "vidéo") issues.push("YouTube exige une vidéo (format Shorts).");
     if (input.caption.length > 5000) issues.push("La description dépasse la limite de YouTube.");
     return issues;
+  },
+
+  async fetchInsights(tokenSet, externalId): Promise<InsightsSnapshot> {
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${externalId}`,
+        { headers: { Authorization: `Bearer ${tokenSet.accessToken}` } },
+      );
+      const body = await res.json();
+      const stats = body?.items?.[0]?.statistics;
+      if (!res.ok || !stats) return EMPTY_INSIGHTS;
+
+      return {
+        views: Number(stats.viewCount ?? 0),
+        likes: Number(stats.likeCount ?? 0),
+        comments: Number(stats.commentCount ?? 0),
+        shares: 0,
+        saves: 0,
+        clicks: 0,
+      };
+    } catch {
+      return EMPTY_INSIGHTS;
+    }
   },
 };

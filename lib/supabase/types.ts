@@ -242,6 +242,7 @@ export type Database = {
           source: string;
           network: string | null;
           lead_magnet_id: string | null;
+          tracked_link_id: string | null;
           status: "Nouveau" | "Contacté" | "Client";
           created_at: string;
         };
@@ -254,6 +255,7 @@ export type Database = {
           source?: string;
           network?: string | null;
           lead_magnet_id?: string | null;
+          tracked_link_id?: string | null;
           status?: "Nouveau" | "Contacté" | "Client";
           created_at?: string;
         };
@@ -268,6 +270,7 @@ export type Database = {
           label: string;
           target_url: string;
           clicks: number;
+          post_target_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -277,6 +280,7 @@ export type Database = {
           label: string;
           target_url: string;
           clicks?: number;
+          post_target_id?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tracked_links"]["Insert"]>;
@@ -375,6 +379,8 @@ export type Database = {
           external_url: string | null;
           error: string | null;
           attempts: number;
+          last_synced_at: string | null;
+          published_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -389,6 +395,8 @@ export type Database = {
           external_url?: string | null;
           error?: string | null;
           attempts?: number;
+          last_synced_at?: string | null;
+          published_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["post_targets"]["Insert"]>;
@@ -445,7 +453,22 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      current_post_metrics: {
+        Row: {
+          post_target_id: string;
+          organization_id: string;
+          captured_at: string;
+          views: number;
+          likes: number;
+          comments: number;
+          shares: number;
+          saves: number;
+          clicks: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       try_increment_usage: {
         Args: { p_organization_id: string; p_metric: string; p_limit: number | null };
@@ -480,6 +503,29 @@ export type Database = {
       register_link_click: {
         Args: { p_code: string };
         Returns: string | null;
+      };
+      post_targets_due_for_sync: {
+        Args: Record<string, never>;
+        Returns: Database["public"]["Tables"]["post_targets"]["Row"][];
+      };
+      conversion_funnel: {
+        Args: { p_organization_id: string; p_since: string };
+        Returns: { views: number; clicks: number; leads: number; clients: number }[];
+      };
+      content_performance: {
+        Args: { p_organization_id: string; p_since: string };
+        Returns: {
+          post_id: string;
+          title: string;
+          views: number;
+          clicks: number;
+          leads: number;
+          clients: number;
+        }[];
+      };
+      leads_by_network: {
+        Args: { p_organization_id: string; p_since: string };
+        Returns: { network: string; leads: number }[];
       };
     };
     Enums: Record<string, never>;

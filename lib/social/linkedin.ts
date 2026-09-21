@@ -1,5 +1,12 @@
 import "server-only";
-import type { SocialProvider, TokenSet, PublishInput, PublishResult } from "@/lib/social/types";
+import type {
+  SocialProvider,
+  TokenSet,
+  PublishInput,
+  PublishResult,
+  InsightsSnapshot,
+} from "@/lib/social/types";
+import { EMPTY_INSIGHTS } from "@/lib/social/types";
 
 // LinkedIn — publication sur le profil personnel (w_member_social). La
 // publication sur une page entreprise exige le LinkedIn Marketing
@@ -155,5 +162,25 @@ export const linkedinProvider: SocialProvider = {
       issues.push("Le texte dépasse la limite de 3000 caractères de LinkedIn.");
     }
     return issues;
+  },
+
+  async fetchInsights(tokenSet, externalId): Promise<InsightsSnapshot> {
+    try {
+      const result = await apiRequest<{
+        likesSummary?: { totalLikes: number };
+        commentsSummary?: { aggregatedTotalComments: number };
+      }>(`/socialActions/${encodeURIComponent(externalId)}`, tokenSet.accessToken);
+
+      return {
+        views: 0,
+        likes: result.likesSummary?.totalLikes ?? 0,
+        comments: result.commentsSummary?.aggregatedTotalComments ?? 0,
+        shares: 0,
+        saves: 0,
+        clicks: 0,
+      };
+    } catch {
+      return EMPTY_INSIGHTS;
+    }
   },
 };

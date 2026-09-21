@@ -1,9 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendLeadMagnetEmail } from "@/lib/email/resend";
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 jours
+const ATTRIBUTION_COOKIE = "gr_attr";
 
 export async function submitLeadCapture(
   magnetId: string,
@@ -26,13 +28,34 @@ export async function submitLeadCapture(
   const magnet = magnetRows?.[0];
   if (!magnet) return { error: "Cet aimant n'est plus disponible." };
 
+  // Attribution : si ce visiteur est arrivé via un lien suivi (bouton de la
+  // page lien en bio généré pour une publication), on le rattache.
+  const cookieStore = await cookies();
+  const attributionCode = cookieStore.get(ATTRIBUTION_COOKIE)?.value;
+  let trackedLinkId: string | null = null;
+  let network: string | null = null;
+  if (attributionCode) {
+    const { data: link } = await supabase
+      .from("tracked_links")
+      .select("id, post_targets(network)")
+      .eq("code", attributionCode)
+      .eq("organization_id", magnet.organization_id)
+      .maybeSingle();
+    if (link) {
+      trackedLinkId = link.id;
+      network = (link.post_targets as unknown as { network: string } | null)?.network ?? null;
+    }
+  }
+
   const { error: insertError } = await supabase.from("leads").insert({
     organization_id: magnet.organization_id,
     name,
     email,
     consent: true,
     source: magnet.title,
+    network,
     lead_magnet_id: magnet.id,
+    tracked_link_id: trackedLinkId,
   });
   if (insertError) {
     return { error: "Impossible d'enregistrer votre demande. Merci de réessayer." };

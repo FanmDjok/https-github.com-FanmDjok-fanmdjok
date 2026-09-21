@@ -56,3 +56,13 @@ export const CaptionAdaptationSchema = z.object({
   caption: z.string().describe("Légende adaptée au réseau demandé"),
 });
 export type CaptionAdaptation = z.infer<typeof CaptionAdaptationSchema>;
+
+export const MesurerInsightSchema = z.object({
+  insight: z.string().describe("Lecture concrète des statistiques, avec une recommandation"),
+});
+export type MesurerInsight = z.infer<typeof MesurerInsightSchema>;
+
+export const PostAnalysisSchema = z.object({
+  priority: z.string().describe("Priorité d'amélioration concrète pour cette publication"),
+});
+export type PostAnalysisPriority = z.infer<typeof PostAnalysisSchema>;
