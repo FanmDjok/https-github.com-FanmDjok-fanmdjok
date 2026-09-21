@@ -1,0 +1,11 @@
+{
+  "name": "growthis — l'atelier qui transforme votre contenu en clients",
+  "short_name": "growthis",
+  "description": "Attirez des prospects grâce à votre contenu, captez-les, publiez sur tous vos réseaux et mesurez ce qui rapporte vraiment.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F1",
+  "theme_color": "#0E8A5F",
+  "lang": "fr",
+  "icons": []
+}
