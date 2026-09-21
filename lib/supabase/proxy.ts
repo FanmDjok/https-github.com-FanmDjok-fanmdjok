@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/conseil",
   "/formules",
   "/onboarding",
+  "/parametres",
 ];
 
 export async function updateSession(request: NextRequest) {

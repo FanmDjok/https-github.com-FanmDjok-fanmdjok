@@ -8,7 +8,7 @@ import { Logo } from "@/components/ui/logo";
 import { OrgSwitcher } from "@/components/nav/org-switcher";
 import type { OrganizationSummary } from "@/lib/organizations";
 import { signOut } from "@/app/auth/actions";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { NotificationsBell, type NotificationItem } from "@/components/nav/notifications-bell";
 
@@ -63,6 +63,14 @@ export function Sidebar({
         <span className="truncate text-sm text-ink-secondary">{userLabel}</span>
         <div className="flex items-center gap-3">
           <NotificationsBell notifications={notifications} />
+          <Link
+            href="/parametres"
+            className="text-ink-secondary hover:text-ink"
+            aria-label="Paramètres"
+            title="Paramètres et données"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
           <button
             type="button"
             onClick={toggleTheme}
