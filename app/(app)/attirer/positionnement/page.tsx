@@ -1,13 +1,29 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentOrganizationId } from "@/lib/organizations";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionTabs } from "@/components/nav/section-tabs";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, Textarea } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader } from "@/components/ui/card";
+import { PositioningForm } from "@/components/attirer/positioning-form";
 import { ATTIRER_TABS } from "@/lib/nav";
-import { samplePositioning } from "@/lib/sample-data";
 import { Sparkles } from "lucide-react";
 
-export default function PositionnementPage() {
+export default async function PositionnementPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { currentId } = await getCurrentOrganizationId(supabase, user.id);
+  const { data: positioning } = currentId
+    ? await supabase
+        .from("positioning")
+        .select("ideal_client, problem, promise, offer")
+        .eq("organization_id", currentId)
+        .maybeSingle()
+    : { data: null };
+
   return (
     <div className="animate-fade-up">
       <PageHeader
@@ -18,26 +34,7 @@ export default function PositionnementPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <form className="flex flex-col gap-5">
-            <Field
-              label="Votre client idéal"
-              hint="Soyez précis : à qui vous adressez-vous en priorité ?"
-            >
-              <Textarea rows={2} defaultValue={samplePositioning.idealClient} />
-            </Field>
-            <Field label="Son problème principal">
-              <Textarea rows={2} defaultValue={samplePositioning.problem} />
-            </Field>
-            <Field label="Votre promesse">
-              <Textarea rows={2} defaultValue={samplePositioning.promise} />
-            </Field>
-            <Field label="Votre offre">
-              <Textarea rows={2} defaultValue={samplePositioning.offer} />
-            </Field>
-            <div className="flex justify-end">
-              <Button type="submit">Enregistrer</Button>
-            </div>
-          </form>
+          <PositioningForm initial={positioning} />
         </Card>
 
         <Card className="h-fit border-emerald/30 bg-emerald/[0.04]">
@@ -46,7 +43,7 @@ export default function PositionnementPage() {
               <Sparkles className="h-4 w-4 text-emerald" />
             </div>
           </CardHeader>
-          <CardTitle>Pourquoi c&apos;est important</CardTitle>
+          <p className="text-base font-medium text-ink">Pourquoi c&apos;est important</p>
           <CardDescription className="mt-2">
             Un positionnement clair permet à l&apos;IA de proposer des idées,
             des scripts et des carrousels qui parlent directement à votre

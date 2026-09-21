@@ -12,9 +12,16 @@ analyses, conseils).
 
 ## État du projet
 
-Phase 1 en cours : projet, design system « Atelier », authentification,
-organisations/marques, navigation et tous les écrans avec des données
-d'exemple. Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
+- **Phase 1** ✅ : projet, design system « Atelier », authentification,
+  organisations/marques, navigation et tous les écrans avec des données
+  d'exemple.
+- **Phase 2** ✅ : positionnement (persisté), idées de la semaine, scripts
+  vidéo (+ prompteur) et carrousels générés par l'API Claude et enregistrés
+  en base, conseiller IA avec historique et limite mensuelle en formule
+  Gratuite. Le planning éditorial 30 jours et l'analyse de publication
+  restent en données d'exemple (ils dépendent de Publier/Mesurer, Phases 4-5).
+
+Voir la section [Ordre de travail](#ordre-de-travail) plus bas.
 
 ## Stack
 
@@ -66,6 +73,20 @@ doit être exposé côté client (seules les variables préfixées
 `NEXT_PUBLIC_` le sont). Les jetons des réseaux sociaux sont chiffrés en
 base avec `ENCRYPTION_KEY` avant stockage.
 
+### Configurer l'API Claude
+
+1. Créez une clé sur [console.anthropic.com](https://console.anthropic.com/settings/keys)
+   et renseignez-la dans `ANTHROPIC_API_KEY`.
+2. `ANTHROPIC_MODEL` contrôle le modèle utilisé pour toutes les générations
+   de texte (par défaut `claude-opus-5`) — ajustez-le si besoin sans
+   toucher au code.
+3. Toutes les réponses IA sont contraintes par un schéma `zod` côté serveur
+   (`lib/ai/schemas.ts`) via les sorties structurées de l'API Messages —
+   aucune réponse IA n'atteint la base sans validation de forme.
+4. Sans clé valide, les pages Idées / Scripts / Carrousels / Conseil
+   affichent une erreur de génération au lieu de planter : le reste de
+   l'application (auth, navigation, positionnement) fonctionne normalement.
+
 ## Configurer chaque réseau (Publier — Phase 4)
 
 Chaque réseau nécessite une application développeur et, pour la plupart,
@@ -91,11 +112,11 @@ signalé.
 
 ## Ordre de travail
 
-1. **Phase 1** *(en cours)* — projet, design system Atelier, auth,
+1. **Phase 1** ✅ — projet, design system Atelier, auth,
    organisations/marques, navigation, tous les écrans avec données d'exemple.
-2. **Phase 2** — positionnement, idées, scripts + prompteur, carrousels,
+2. **Phase 2** ✅ — positionnement, idées, scripts + prompteur, carrousels,
    conseiller (API Claude).
-3. **Phase 3** — page lien en bio, aimants (PDF), capture de prospects,
+3. **Phase 3** *(à venir)* — page lien en bio, aimants (PDF), capture de prospects,
    liens suivis.
 4. **Phase 4** — Publier : `SocialProvider`, médiathèque, éditeur
    multi-réseaux, file de tâches, calendrier. Instagram + Facebook d'abord,

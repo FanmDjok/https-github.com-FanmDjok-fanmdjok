@@ -1,10 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScriptDetail } from "@/components/attirer/script-detail";
-import { sampleScripts } from "@/lib/sample-data";
 import { ArrowLeft } from "lucide-react";
 
 export default async function ScriptPage({
@@ -13,7 +13,18 @@ export default async function ScriptPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const script = sampleScripts.find((s) => s.id === id);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: script } = await supabase
+    .from("scripts")
+    .select("id, title, objective, duration, hook, body, cta")
+    .eq("id", id)
+    .maybeSingle();
+
   if (!script) notFound();
 
   return (

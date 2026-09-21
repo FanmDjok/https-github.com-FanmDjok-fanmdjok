@@ -71,9 +71,128 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
         Relationships: [];
       };
+      positioning: {
+        Row: {
+          organization_id: string;
+          ideal_client: string;
+          problem: string;
+          promise: string;
+          offer: string;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          ideal_client?: string;
+          problem?: string;
+          promise?: string;
+          offer?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["positioning"]["Insert"]>;
+        Relationships: [];
+      };
+      scripts: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          objective: "Attirer" | "Rassurer" | "Convertir";
+          duration: 30 | 60 | 90;
+          hook: string;
+          body: string;
+          cta: string;
+          status: "brouillon" | "publié";
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          title: string;
+          objective: "Attirer" | "Rassurer" | "Convertir";
+          duration: 30 | 60 | 90;
+          hook: string;
+          body: string;
+          cta: string;
+          status?: "brouillon" | "publié";
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["scripts"]["Insert"]>;
+        Relationships: [];
+      };
+      carousels: {
+        Row: {
+          id: string;
+          organization_id: string;
+          title: string;
+          caption: string;
+          slides: string[];
+          created_by: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          title: string;
+          caption?: string;
+          slides?: string[];
+          created_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["carousels"]["Insert"]>;
+        Relationships: [];
+      };
+      coach_messages: {
+        Row: {
+          id: string;
+          organization_id: string;
+          role: "user" | "assistant";
+          content: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          role: "user" | "assistant";
+          content: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["coach_messages"]["Insert"]>;
+        Relationships: [];
+      };
+      usage_counters: {
+        Row: {
+          id: string;
+          organization_id: string;
+          metric: string;
+          period: string;
+          count: number;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          metric: string;
+          period: string;
+          count?: number;
+        };
+        Update: Partial<Database["public"]["Tables"]["usage_counters"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      try_increment_usage: {
+        Args: { p_organization_id: string; p_metric: string; p_limit: number | null };
+        Returns: boolean;
+      };
+      current_usage: {
+        Args: { p_organization_id: string; p_metric: string };
+        Returns: number;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
