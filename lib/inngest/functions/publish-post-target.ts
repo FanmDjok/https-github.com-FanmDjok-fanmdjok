@@ -11,7 +11,7 @@ import { NETWORKS, type NetworkId } from "@/lib/networks";
 const MAX_ATTEMPTS = 3;
 const MEDIA_SIGNED_URL_TTL = 60 * 60 * 2; // 2 heures — le temps que le réseau récupère le fichier
 
-async function attemptPublish(postTargetId: string) {
+export async function attemptPublish(postTargetId: string) {
   const supabase = createServiceClient();
 
   const { data: target } = await supabase
